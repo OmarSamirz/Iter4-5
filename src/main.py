@@ -1,22 +1,40 @@
 import pandas as pd
 
 from constants import CLEANED_TEST_DATA_PATH, ENCODED_TEST_DATA_PATH
-from models import Qwen3EmbeddingModel2
-from utils import evaluate_qwen3_embedding, evaluate_dummy_model, load_qwen3_embedding
+from utils import evaluate_qwen3_embedding, evaluate_dummy_model, load_embedding_model
+from models import (
+    Qwen3EmbeddingModel, 
+    Qwen3EmbeddingConfig,
+    ParaphraserModel,
+    ParaphraserConfig,
+    BaseEmbeddingModel,
+    BaseEmbeddingConfig
+)
 
-def evaluate_models(dataset_path: str, column_name: str, n_samples: int):
+def evaluate_models(
+    dataset_path: str, 
+    column_name: str, 
+    model_class: BaseEmbeddingModel, 
+    config_class: BaseEmbeddingConfig, 
+    n_samples: int
+):
     df = pd.read_csv(dataset_path)
     print(f"Number of samples: {n_samples}")
     print(f"The used column to test the models: {column_name}")
-    embedding_score = evaluate_qwen3_embedding(df, column_name, Qwen3EmbeddingModel2, n_samples)
+    embedding_score = evaluate_qwen3_embedding(df, column_name, model_class, config_class, n_samples)
     print(f"The F1 score for the embedding model: {embedding_score}")
 
     dummy_score = evaluate_dummy_model(df, column_name, n_samples)
     print(f"The F1 score for the dummy model: {dummy_score}")
 
-def encode_dataset(dataset_path: str, save_path: str):
+def encode_dataset(
+    dataset_path: str, 
+    save_path: str,
+    model_class: BaseEmbeddingModel, 
+    config_class: BaseEmbeddingConfig, 
+):
     df = pd.read_csv(dataset_path)
-    model = load_qwen3_embedding(Qwen3EmbeddingModel2)
+    model = load_embedding_model(model_class, config_class)
 
     product_names = df["Item_Name"].tolist()
     classes = df["class"].tolist()
@@ -50,7 +68,8 @@ def main():
     # encode_dataset(CLEANED_TEST_DATA_PATH, ENCODED_TEST_DATA_PATH)
     # Item_Name, cleaned_item_name
     N_SAMPLES = None
-    evaluate_models(CLEANED_TEST_DATA_PATH, "cleaned_item_name", N_SAMPLES)
+    evaluate_models(CLEANED_TEST_DATA_PATH, "cleaned_item_name", ParaphraserModel, ParaphraserConfig, N_SAMPLES)
+
 
 if __name__ == "__main__":
     main()

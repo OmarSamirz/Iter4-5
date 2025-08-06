@@ -1,0 +1,6 @@
+{
+    "device": "cuda",
+    "dtype": "float32",
+    "model_id": "sentence-transformers/paraphrase-multilingual-mpnet-base-v2",
+    "truncate_dim": null
+}

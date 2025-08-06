@@ -8,14 +8,15 @@ from typing import List, Optional
 
 from models import (
     BaseEmbeddingModel,
+    BaseEmbeddingConfig,
     Qwen3EmbeddingConfig,
+    ParaphraserConfig,
     DummyModel,
     DummyModelConfig,
 )
 from constants import (
-    QWEN3_EMBEDDING_CONFIG_PATH, 
-    PROMPTS_PATH, 
-    TRAIN_VAL_SAMPLE_DATA_PATH,
+    QWEN3_EMBEDDING_CONFIG_PATH,
+    PARAPHRASER_EMBEDDING_CONFIG_PATH,
     DUMMY_MODEL_CONFIG_PATH,
 )
 
@@ -49,14 +50,20 @@ def load_dummy_model():
 
     return model
 
-def load_qwen3_embedding(model_class: BaseEmbeddingModel):
-    with open(QWEN3_EMBEDDING_CONFIG_PATH, "r") as f:
-        config_dict = json.load(f)
-
+def load_embedding_model(model_class: BaseEmbeddingModel, config_class: BaseEmbeddingConfig):
+    if issubclass(config_class, Qwen3EmbeddingConfig):
+        with open(QWEN3_EMBEDDING_CONFIG_PATH, "r") as f:
+            config_dict = json.load(f)
+    elif issubclass(config_class, ParaphraserConfig):
+        with open(PARAPHRASER_EMBEDDING_CONFIG_PATH, "r") as f:
+            config_dict = json.load(f)
+    else:
+        raise ValueError(f"This config class is not supported.")
+    
     try:
-        config = Qwen3EmbeddingConfig(**config_dict)
+        config = config_class(**config_dict)
     except TypeError as e:
-        raise ValueError(f"Invalid configuration keys in {QWEN3_EMBEDDING_CONFIG_PATH}: {e}.")
+        raise ValueError(f"Invalid configuration keys in {config_class}: {e}.")
 
     model = model_class(config)
 
@@ -68,10 +75,11 @@ def evaluate_model(y_true: List[str], y_pred: List[str], average: str) -> float:
 def evaluate_qwen3_embedding(
         df: pd.DataFrame, 
         column_name: str,
-        model_class: BaseEmbeddingModel, 
+        model_class: BaseEmbeddingModel,
+        config_class: BaseEmbeddingConfig,
         n_samples: Optional[int] = None,
     ):
-    model = load_qwen3_embedding(model_class)
+    model = load_embedding_model(model_class, config_class)
 
     num_samples = n_samples if n_samples is not None else len(df)
     product_names = df[column_name].tolist()[:num_samples]

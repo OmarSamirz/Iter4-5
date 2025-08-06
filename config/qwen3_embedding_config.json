@@ -2,9 +2,5 @@
     "device": "cuda",
     "dtype": "bfloat16",
     "model_id": "Qwen/Qwen3-Embedding-0.6B",
-    "tokenizer_max_length": 8192,
-    "truncate_dim": 512,
-    "padding": true,
-    "truncation": true,
-    "task_prompt": "Given a product name as the query and a product category as the document, compute a similarity score that reflects how well the product name matches the category"
+    "truncate_dim": null
 }
