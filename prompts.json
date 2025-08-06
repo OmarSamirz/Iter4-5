@@ -1,0 +1,5 @@
+{
+    "qwen3_embedding": {
+        "task_prompt": "Given a product name as the query and a product category as the document, compute a similarity score that reflects how well the product name matches the category"
+    }
+}
