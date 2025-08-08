@@ -8,21 +8,15 @@ from models import (
     DummyModelConfig,
     SentenceEmbeddingModel, 
     SentenceEmbeddingConfig,
-)  
-from constants import (
-    QWEN3_EMBEDDING_CONFIG_PATH,
-    PARAPHRASER_EMBEDDING_CONFIG_PATH,
-    DUMMY_MODEL_CONFIG_PATH,
-    BGE_M3_CONFIG_PATH,
-    ALL_STOPWORDS
 )
+from constants import DUMMY_MODEL_CONFIG_PATH, ALL_STOPWORDS
 
 def remove_strings(text: str, strings: List[str]) -> str:
     for s in strings:
         s = str(s)
         if s in text:
             text = text.replace(s, "")
-    
+
     return text
 
 def remove_numbers(text: str, remove_string: bool = False) -> str:
@@ -38,7 +32,9 @@ def remove_stopwords(text: str):
     return " ".join(text)
 
 def remove_punctuations(text: str) -> str:
-    return re.sub(r'[^\w\s]', '', text)
+    text = re.sub(r'[^\w\s]', '', text)
+
+    return " ".join(text.strip().split()) 
 
 def clean_text(row) -> str:
     text = row.Item_Name

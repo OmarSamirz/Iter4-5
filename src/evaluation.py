@@ -38,7 +38,7 @@ def evaluate_embedding_model(
     print(f"You are evaluating: {model.model_id}")
     num_samples = n_samples if n_samples is not None else len(df)
     product_names = df[column_name].tolist()[:num_samples]
-    classes = list(set(df["class"].tolist()))
+    classes = list(set(df["label"].tolist()))
 
     scores = []
     classes_idx = []
@@ -54,7 +54,7 @@ def evaluate_embedding_model(
 
     print(f"Average time taken for a single example: {statistics.mean(runtime)} seconds\nNumber of examples: {len(runtime)}")
     y_pred = [classes[idx] for idx in classes_idx]
-    y_true =  df["class"].tolist()[:num_samples]
+    y_true =  df["label"].tolist()[:num_samples]
 
     model_score = evaluation_score(y_true, y_pred, "weighted")
 
@@ -65,11 +65,11 @@ def evaluate_dummy_model(df: pd.DataFrame, column_name: str, n_samples: Optional
 
     num_samples = n_samples if n_samples is not None else len(df)
     product_names = df[column_name].tolist()[:num_samples]
-    labels = df["class"].tolist()[:num_samples]
+    labels = df["label"].tolist()[:num_samples]
 
     model.fit_model(product_names, labels)
     y_pred = model.predict(product_names)
-    y_true =  df["class"].tolist()[:num_samples]
+    y_true =  df["label"].tolist()[:num_samples]
 
     model_score = evaluation_score(y_true, y_pred, "weighted")
 
