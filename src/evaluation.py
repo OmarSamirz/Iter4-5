@@ -100,41 +100,46 @@ def evaluate_ensemble_model(
     df: pd.DataFrame,
     column_name: str,
     paraphraser_config_path: str,
-    alpha: float = 0.6,
+    alpha: float = 0.2,  # start lower since TF-IDF is stronger
     n_samples: Optional[int] = None,
 ) -> float:
     """
-    Ensemble TF-IDF with paraphraser embeddings.
-    combined = alpha * paraphraser_probs + (1 - alpha) * tfidf_probs
+    Ensemble TF-IDF (centroids) with embedding similarities.
+    combined = alpha * emb_probs + (1 - alpha) * tfidf_probs
     """
     num_samples = n_samples if n_samples is not None else len(df)
     product_names = df[column_name].astype(str).tolist()[:num_samples]
-    classes = sorted(set(df["class"].astype(str).tolist()))
+    labels = df["class"].astype(str).tolist()[:num_samples]
+    classes = sorted(set(labels))
 
-    # TF-IDF scores
+    # 1) TF-IDF scores using the SAME centroid approach as in evaluate_tfidf_model
     tfidf_model = TfidfSimilarityModel()
-    tfidf_scores = tfidf_model.get_scores(product_names, classes)  # (N, C) numpy
+    tfidf_model.fit_corpus(product_names)
+    centroid_mat, classes_ordered = tfidf_model.build_class_centroids(product_names, labels)
 
-    # Paraphraser scores (using your embedding pipeline)
+    # Reorder centroids to match the "classes" list used everywhere else
+    idx_map = {c: i for i, c in enumerate(classes_ordered)}
+    order = [idx_map[c] for c in classes]
+    centroid_mat_aligned = centroid_mat[order]
+    tfidf_scores = tfidf_model.get_scores_against_centroids(product_names, centroid_mat_aligned)  # (N, C) numpy
+
+    # 2) Embedding scores (batched)
     emb_model = load_embedding_model(paraphraser_config_path)
-    emb_rows = []
-    for name in product_names:
-        s = emb_model.get_scores([name], classes)  # 1 x C torch tensor
-        emb_rows.append(s)
-    emb_scores = torch.vstack(emb_rows).cpu().numpy()  # (N, C) numpy
+    emb_scores = emb_model.get_scores(product_names, classes).cpu().numpy()  # (N, C)
 
-    # Row-wise softmax normalization for each model
+    # 3) Row-wise softmax normalization for each model
     def row_softmax(a: np.ndarray) -> np.ndarray:
-        a = a - a.max(axis=1, keepdims=True)  # for numerical stability
+        a = a - a.max(axis=1, keepdims=True)
         ea = np.exp(a)
         return ea / ea.sum(axis=1, keepdims=True)
 
-    emb_probs = row_softmax(emb_scores)
     tfidf_probs = row_softmax(tfidf_scores)
+    emb_probs = row_softmax(emb_scores)
 
+    # 4) Weighted blend
     combined = alpha * emb_probs + (1.0 - alpha) * tfidf_probs
     pred_idx = np.argmax(combined, axis=1)
     y_pred = [classes[i] for i in pred_idx]
-    y_true = df["class"].astype(str).tolist()[:num_samples]
+    y_true = labels
 
     return evaluation_score(y_true, y_pred, "weighted")

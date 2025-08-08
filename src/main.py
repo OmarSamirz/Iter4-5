@@ -75,7 +75,7 @@ def main():
         column_name="cleaned_item_name",
         model_config_path=E5_LARGE_INSTRUCT_CONFIG_PATH,
         n_samples=N_SAMPLES,
-        alpha=0.6,  # weight given to Model embeddings vs TF-IDF
+        alpha=0.2,  # weight given to Model embeddings vs TF-IDF
     )
 
 
