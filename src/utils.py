@@ -72,6 +72,17 @@ def load_embedding_model(model_class: BaseEmbeddingModel, config_class: BaseEmbe
 def evaluate_model(y_true: List[str], y_pred: List[str], average: str) -> float:
     return f1_score(y_true, y_pred, average=average)
 
+def evaluate_model_topk(y_true: List[str], y_pred_topk: List[List[str]], average: str, k: int) -> float:
+    y_pred_adjusted = []
+    for true_label, pred_list in zip(y_true, y_pred_topk):
+        if true_label in pred_list:
+            y_pred_adjusted.append(true_label)  
+        else:
+            y_pred_adjusted.append(pred_list[0])  
+
+    return f1_score(y_true, y_pred_adjusted, average=average)
+
+
 def evaluate_qwen3_embedding(
         df: pd.DataFrame, 
         column_name: str,
@@ -99,6 +110,38 @@ def evaluate_qwen3_embedding(
     model_score = evaluate_model(y_true, y_pred, "weighted")
 
     return model_score
+
+def evaluate_qwen3_embedding_topk(
+        df: pd.DataFrame, 
+        column_name: str,
+        model_class: BaseEmbeddingModel,
+        config_class: BaseEmbeddingConfig,
+        n_samples: Optional[int] = None,
+        k: int = 3,
+    ):
+    """
+    Evaluate Qwen3 embedding model using Top-k accuracy logic for F1 score.
+    """
+    model = load_embedding_model(model_class, config_class)
+
+    num_samples = n_samples if n_samples is not None else len(df)
+    product_names = df[column_name].tolist()[:num_samples]
+    classes = list(set(df["class"].tolist()))
+
+    topk_preds = []
+    scores = []
+    for product_name in product_names:
+        score = model.get_scores([product_name], classes)  
+        topk_indices = torch.topk(score, k, dim=1).indices.squeeze(0).tolist()
+        topk_labels = [classes[idx] for idx in topk_indices]
+        scores.append(score)
+        topk_preds.append(topk_labels)
+
+    y_true = df["class"].tolist()[:num_samples]
+
+    model_score = evaluate_model_topk(y_true, topk_preds, "weighted", k)
+    return model_score
+
 
 def evaluate_dummy_model(df: pd.DataFrame, column_name: str, n_samples: Optional[int] = None):
     model = load_dummy_model()

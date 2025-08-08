@@ -1,4 +1,3 @@
-
 from torch import Tensor
 from sklearn.dummy import DummyClassifier
 from sentence_transformers import SentenceTransformer

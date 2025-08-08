@@ -1,7 +1,9 @@
 import pandas as pd
+import matplotlib.pyplot as plt
+import time
 
 from constants import CLEANED_TEST_DATA_PATH, ENCODED_TEST_DATA_PATH
-from utils import evaluate_qwen3_embedding, evaluate_dummy_model, load_embedding_model
+from utils import evaluate_qwen3_embedding_topk, evaluate_dummy_model, load_embedding_model
 from models import (
     Qwen3EmbeddingModel, 
     Qwen3EmbeddingConfig,
@@ -21,7 +23,7 @@ def evaluate_models(
     df = pd.read_csv(dataset_path)
     print(f"Number of samples: {n_samples}")
     print(f"The used column to test the models: {column_name}")
-    embedding_score = evaluate_qwen3_embedding(df, column_name, model_class, config_class, n_samples)
+    embedding_score = evaluate_qwen3_embedding_topk(df, column_name, model_class, config_class, n_samples, k = 5)
     print(f"The F1 score for the embedding model: {embedding_score}")
 
     dummy_score = evaluate_dummy_model(df, column_name, n_samples)
@@ -34,6 +36,7 @@ def encode_dataset(
     config_class: BaseEmbeddingConfig, 
 ):
     df = pd.read_csv(dataset_path)
+    df = df.sample(frac=0.2, random_state=0).copy()
     model = load_embedding_model(model_class, config_class)
 
     product_names = df["Item_Name"].tolist()
@@ -65,11 +68,15 @@ def encode_dataset(
     df.to_csv(save_path, index=False, encoding="utf-8-sig")
 
 def main():
-    # encode_dataset(CLEANED_TEST_DATA_PATH, ENCODED_TEST_DATA_PATH)
+    #encode_dataset(CLEANED_TEST_DATA_PATH, ENCODED_TEST_DATA_PATH)
     # Item_Name, cleaned_item_name
     N_SAMPLES = None
     evaluate_models(CLEANED_TEST_DATA_PATH, "cleaned_item_name", ParaphraserModel, ParaphraserConfig, N_SAMPLES)
 
 
 if __name__ == "__main__":
+    start = time.perf_counter()
     main()
+    end = time.perf_counter()
+    print(f"Runtime: {end - start:.4f}")
+   
