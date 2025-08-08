@@ -1,6 +1,8 @@
 import torch
 import pandas as pd
 from sklearn.metrics import f1_score
+import numpy as np
+from models import TfidfSimilarityModel
 
 import time
 import statistics
@@ -38,8 +40,8 @@ def evaluate_embedding_model(
     print(f"You are evaluating: {model.model_id}")
     num_samples = n_samples if n_samples is not None else len(df)
     product_names = df[column_name].tolist()[:num_samples]
-    classes = list(set(df["class"].tolist()))
-
+    classes = sorted(set(df["class"].tolist()))
+    
     scores = []
     classes_idx = []
     runtime = []
@@ -74,3 +76,65 @@ def evaluate_dummy_model(df: pd.DataFrame, column_name: str, n_samples: Optional
     model_score = evaluation_score(y_true, y_pred, "weighted")
 
     return model_score
+
+def evaluate_tfidf_model(
+    df: pd.DataFrame,
+    column_name: str,
+    n_samples: Optional[int] = None,
+) -> float:
+    model = TfidfSimilarityModel()
+    num_samples = n_samples if n_samples is not None else len(df)
+    product_names = df[column_name].astype(str).tolist()[:num_samples]
+    labels = df["class"].astype(str).tolist()[:num_samples]
+
+    model.fit_corpus(product_names)
+    centroid_mat, classes_ordered = model.build_class_centroids(product_names, labels)
+    scores = model.get_scores_against_centroids(product_names, centroid_mat)
+    pred_idx = np.argmax(scores, axis=1)
+    y_pred = [classes_ordered[i] for i in pred_idx]
+    y_true = labels
+    return evaluation_score(y_true, y_pred, "weighted")
+
+
+def evaluate_ensemble_model(
+    df: pd.DataFrame,
+    column_name: str,
+    paraphraser_config_path: str,
+    alpha: float = 0.6,
+    n_samples: Optional[int] = None,
+) -> float:
+    """
+    Ensemble TF-IDF with paraphraser embeddings.
+    combined = alpha * paraphraser_probs + (1 - alpha) * tfidf_probs
+    """
+    num_samples = n_samples if n_samples is not None else len(df)
+    product_names = df[column_name].astype(str).tolist()[:num_samples]
+    classes = sorted(set(df["class"].astype(str).tolist()))
+
+    # TF-IDF scores
+    tfidf_model = TfidfSimilarityModel()
+    tfidf_scores = tfidf_model.get_scores(product_names, classes)  # (N, C) numpy
+
+    # Paraphraser scores (using your embedding pipeline)
+    emb_model = load_embedding_model(paraphraser_config_path)
+    emb_rows = []
+    for name in product_names:
+        s = emb_model.get_scores([name], classes)  # 1 x C torch tensor
+        emb_rows.append(s)
+    emb_scores = torch.vstack(emb_rows).cpu().numpy()  # (N, C) numpy
+
+    # Row-wise softmax normalization for each model
+    def row_softmax(a: np.ndarray) -> np.ndarray:
+        a = a - a.max(axis=1, keepdims=True)  # for numerical stability
+        ea = np.exp(a)
+        return ea / ea.sum(axis=1, keepdims=True)
+
+    emb_probs = row_softmax(emb_scores)
+    tfidf_probs = row_softmax(tfidf_scores)
+
+    combined = alpha * emb_probs + (1.0 - alpha) * tfidf_probs
+    pred_idx = np.argmax(combined, axis=1)
+    y_pred = [classes[i] for i in pred_idx]
+    y_true = df["class"].astype(str).tolist()[:num_samples]
+
+    return evaluation_score(y_true, y_pred, "weighted")

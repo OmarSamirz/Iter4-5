@@ -1,11 +1,19 @@
 import pandas as pd
+import time
 
 from utils import load_embedding_model
-from evaluation import evaluate_dummy_model, evaluate_embedding_model
+from evaluation import (
+    evaluate_dummy_model,
+    evaluate_embedding_model,
+    evaluate_tfidf_model,
+    evaluate_ensemble_model,
+)
 from constants import (
-    CLEANED_TEST_DATA_PATH, 
+    CLEANED_TEST_DATA_PATH,
     ENCODED_TEST_DATA_PATH,
-    E5_LARGE_CONFIG_PATH
+    PARAPHRASER_EMBEDDING_CONFIG_PATH,
+    E5_LARGE_CONFIG_PATH,
+    E5_LARGE_INSTRUCT_CONFIG_PATH
 )
 
 def evaluate_models(
@@ -60,11 +68,56 @@ def encode_dataset(
     df.to_csv(save_path, index=False, encoding="utf-8-sig")
 
 def main():
-    # encode_dataset(CLEANED_TEST_DATA_PATH, ENCODED_TEST_DATA_PATH)
     N_SAMPLES = None
-    # Item_Name, cleaned_item_name
-    evaluate_models(CLEANED_TEST_DATA_PATH, "cleaned_item_name", E5_LARGE_CONFIG_PATH, N_SAMPLES)
+    # Column can be "Item_Name" if you haven’t created a cleaned column yet.
+    run_comparative_evaluation(
+        dataset_path=CLEANED_TEST_DATA_PATH,
+        column_name="cleaned_item_name",
+        model_config_path=E5_LARGE_INSTRUCT_CONFIG_PATH,
+        n_samples=N_SAMPLES,
+        alpha=0.6,  # weight given to Model embeddings vs TF-IDF
+    )
 
+
+def run_comparative_evaluation(
+    dataset_path: str,
+    column_name: str,
+    model_config_path: str,
+    n_samples: int = None,
+    alpha: float = 0.6,
+):
+    df = pd.read_csv(dataset_path)
+    print(f"Number of samples: {n_samples if n_samples is not None else len(df)}")
+    print(f"Using column for evaluation: {column_name}")
+
+    # 1) TF-IDF alone
+    start = time.perf_counter()
+    tfidf_f1 = evaluate_tfidf_model(df, column_name, n_samples)
+    tfidf_dt = time.perf_counter() - start
+    print(f"[TF-IDF] Weighted F1: {tfidf_f1:.4f} (took {tfidf_dt:.3f}s)")
+
+    # 2) Model embeddings alone
+    start = time.perf_counter()
+    para_f1 = evaluate_embedding_model(
+        df=df,
+        column_name=column_name,
+        config_path=model_config_path,
+        n_samples=n_samples,
+    )
+    para_dt = time.perf_counter() - start
+    print(f"[Paraphraser embeddings] Weighted F1: {para_f1:.4f} (took {para_dt:.3f}s)")
+
+    # 3) Ensemble (TF-IDF + Model embeddings)
+    start = time.perf_counter()
+    ensemble_f1 = evaluate_ensemble_model(
+        df=df,
+        column_name=column_name,
+        paraphraser_config_path=model_config_path,
+        alpha=alpha,
+        n_samples=n_samples,
+    )
+    ensemble_dt = time.perf_counter() - start
+    print(f"[Ensemble alpha={alpha}] Weighted F1: {ensemble_f1:.4f} (took {ensemble_dt:.3f}s)")
 
 if __name__ == "__main__":
     main()
