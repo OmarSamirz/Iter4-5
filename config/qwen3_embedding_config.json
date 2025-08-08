@@ -1,6 +1,0 @@
-{
-    "device": "cuda",
-    "dtype": "float32",
-    "model_id": "Qwen/Qwen3-Embedding-0.6B",
-    "truncate_dim": null
-}

@@ -1,6 +1,10 @@
 
 from torch import Tensor
+from sklearn.pipeline import Pipeline
 from sklearn.dummy import DummyClassifier
+from sklearn.feature_extraction.text import TfidfVectorizer
+from sklearn.linear_model import LogisticRegression
+from sklearn.ensemble import RandomForestClassifier
 from sentence_transformers import SentenceTransformer
 
 from typing import List, Optional
@@ -47,7 +51,55 @@ class SentenceEmbeddingModel:
         scores = self.calculate_scores(query_embeddings, document_embeddings)
         
         return scores
-    
+
+
+@dataclass
+class TfidfClassifierConfig:
+    analyzer: str = "char_wb"
+    ngram_range: tuple = (3, 5)
+    min_df: int = 2
+    max_df: float = 0.9
+    lowercase: bool = True
+    sublinear_tf: bool = True
+    smooth_idf: bool = True
+    norm: str = "l2"
+    strip_accents: Optional[str] = None
+    stop_words: Optional[set] = None
+    random_state: int = 42
+
+
+class TfidfClassifier:
+
+    def __init__(self, config: Optional[TfidfClassifierConfig]):
+        self.config = config
+        self.vectorizer = TfidfVectorizer(
+            analyzer=self.config.analyzer,
+            ngram_range=self.config.ngram_range,
+            min_df=self.config.min_df,
+            max_df=self.config.max_df,
+            lowercase=self.config.lowercase,
+            sublinear_tf=self.config.sublinear_tf,
+            smooth_idf=self.config.smooth_idf,
+            norm=self.config.norm,
+            strip_accents=self.config.strip_accents,
+            stop_words=self.config.stop_words,
+            token_pattern=None if self.config.analyzer in ("char", "char_wb") else r'(?u)\b\w+\b',
+        )
+
+        self.clf = None
+
+    def fit(self, X_train, y_train):
+        self.clf = Pipeline(
+            [
+                ("vectorizer_tfidf", self.vectorizer),
+                ("logistic_regression", RandomForestClassifier())
+            ]
+        )
+        self.clf.fit(X_train, y_train)
+
+    def predict(self, x):
+        return self.clf.predict(x)
+
 
 @dataclass
 class DummyModelConfig:

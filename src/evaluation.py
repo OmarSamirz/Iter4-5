@@ -7,7 +7,7 @@ import statistics
 from typing import List, Optional
 
 from models import SentenceEmbeddingModel
-from utils import load_embedding_model, load_dummy_model
+from utils import load_embedding_model, load_dummy_model, load_tfidf_model
 
 def evaluation_score(y_true: List[str], y_pred: List[str], average: str) -> float:
     return f1_score(y_true, y_pred, average=average)
@@ -72,5 +72,22 @@ def evaluate_dummy_model(df: pd.DataFrame, column_name: str, n_samples: Optional
     y_true =  df["label"].tolist()[:num_samples]
 
     model_score = evaluation_score(y_true, y_pred, "weighted")
+
+    return model_score
+
+# def evaluate_tfidf_model(df_train: pd.DataFrame, df_test: pd.DataFrame):
+def evaluate_tfidf_model(train_data_path: str, test_data_path: str):
+    df_train = pd.read_csv(train_data_path)
+    df_test = pd.read_csv(test_data_path)
+    model = load_tfidf_model()
+
+    X_train, y_train = df_train["cleaned_text"].tolist(), df_train["label"].tolist()
+    X_test, y_test = df_test["cleaned_text"].tolist(), df_test["label"].tolist()
+
+    model.fit(X_train, y_train)
+
+    y_pred = model.predict(X_test)
+
+    model_score = evaluation_score(y_test, y_pred, "weighted")
 
     return model_score

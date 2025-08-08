@@ -1,6 +1,0 @@
-{
-    "device": "cuda",
-    "dtype": "float32",
-    "model_id": "BAAI/bge-m3",
-    "truncate_dim": null
-}

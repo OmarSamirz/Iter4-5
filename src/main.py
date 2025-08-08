@@ -1,11 +1,11 @@
 import pandas as pd
 
 from utils import load_embedding_model
-from evaluation import evaluate_dummy_model, evaluate_embedding_model
+from evaluation import evaluate_dummy_model, evaluate_embedding_model, evaluate_tfidf_model
 from constants import (
-    CLEANED_TEST_DATA_PATH, 
+    CLEANED_TEST_DATA_PATH,
     ENCODED_TEST_DATA_PATH,
-    E5_LARGE_CONFIG_PATH
+    CLEANED_TRAIN_DATA_PATH,
 )
 
 def evaluate_models(
@@ -63,7 +63,9 @@ def main():
     # encode_dataset(CLEANED_TEST_DATA_PATH, ENCODED_TEST_DATA_PATH)
     N_SAMPLES = None
     # Item_Name, cleaned_item_name
-    evaluate_models(CLEANED_TEST_DATA_PATH, "cleaned_item_name", E5_LARGE_CONFIG_PATH, N_SAMPLES)
+    # evaluate_models(CLEANED_TEST_DATA_PATH, "cleaned_item_name", E5_LARGE_CONFIG_PATH, N_SAMPLES)
+    score = evaluate_tfidf_model(CLEANED_TRAIN_DATA_PATH, CLEANED_TEST_DATA_PATH)
+    print(f"F1 score for tfidf: {score}")
 
 
 if __name__ == "__main__":

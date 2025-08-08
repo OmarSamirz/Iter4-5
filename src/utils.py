@@ -6,6 +6,8 @@ from typing import List
 from models import (
     DummyModel,
     DummyModelConfig,
+    TfidfClassifier,
+    TfidfClassifierConfig,
     SentenceEmbeddingModel, 
     SentenceEmbeddingConfig,
 )
@@ -48,6 +50,12 @@ def clean_text(row) -> str:
         text += unit
 
     return  text
+
+def load_tfidf_model():
+    config = TfidfClassifierConfig()
+    model = TfidfClassifier(config)
+
+    return model
 
 def load_dummy_model():
     with open(DUMMY_MODEL_CONFIG_PATH, "r") as f:

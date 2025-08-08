@@ -1,6 +1,0 @@
-{
-    "device": "cuda",
-    "dtype": "float32",
-    "model_id": "intfloat/multilingual-e5-large",
-    "truncate_dim": null
-}
