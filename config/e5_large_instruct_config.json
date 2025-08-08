@@ -1,0 +1,6 @@
+{
+    "device": "cuda",
+    "dtype": "float16",
+    "model_id": "intfloat/multilingual-e5-large-instruct",
+    "truncate_dim": null
+}

@@ -1,0 +1,14 @@
+multilingual-e5-large-instruct:
+    - Number of examples: 4772
+    - Average time taken for a single example: 0.03290002279089762 seconds
+    - The score of using cleaned_text: 0.3980726997889979
+
+paraphrase-multilingual-mpnet-base-v2:
+    - Number of examples: 4772
+    - Average time taken for a single example: 0.021748514856896477 seconds
+    - The score of using cleaned_text: 0.3265305324526368
+
+multilingual-e5-large:
+    - Number of examples: 4772
+    - Average time taken for a single example: 0.05752661182214908 seconds
+    - The score of using cleaned_text: 0.315206649787535

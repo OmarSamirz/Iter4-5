@@ -1,27 +1,23 @@
 import pandas as pd
 
-from constants import CLEANED_TEST_DATA_PATH, ENCODED_TEST_DATA_PATH
-from utils import evaluate_qwen3_embedding, evaluate_dummy_model, load_embedding_model
-from models import (
-    Qwen3EmbeddingModel, 
-    Qwen3EmbeddingConfig,
-    ParaphraserModel,
-    ParaphraserConfig,
-    BaseEmbeddingModel,
-    BaseEmbeddingConfig
+from utils import load_embedding_model
+from evaluation import evaluate_dummy_model, evaluate_embedding_model
+from constants import (
+    CLEANED_TEST_DATA_PATH, 
+    ENCODED_TEST_DATA_PATH,
+    E5_LARGE_CONFIG_PATH
 )
 
 def evaluate_models(
     dataset_path: str, 
-    column_name: str, 
-    model_class: BaseEmbeddingModel, 
-    config_class: BaseEmbeddingConfig, 
+    column_name: str,
+    config_path: str,  
     n_samples: int
 ):
     df = pd.read_csv(dataset_path)
     print(f"Number of samples: {n_samples}")
     print(f"The used column to test the models: {column_name}")
-    embedding_score = evaluate_qwen3_embedding(df, column_name, model_class, config_class, n_samples)
+    embedding_score = evaluate_embedding_model(df, column_name, config_path, n_samples)
     print(f"The F1 score for the embedding model: {embedding_score}")
 
     dummy_score = evaluate_dummy_model(df, column_name, n_samples)
@@ -29,12 +25,11 @@ def evaluate_models(
 
 def encode_dataset(
     dataset_path: str, 
+    config_path: str,
     save_path: str,
-    model_class: BaseEmbeddingModel, 
-    config_class: BaseEmbeddingConfig, 
 ):
     df = pd.read_csv(dataset_path)
-    model = load_embedding_model(model_class, config_class)
+    model = load_embedding_model(config_path)
 
     product_names = df["Item_Name"].tolist()
     classes = df["class"].tolist()
@@ -66,9 +61,9 @@ def encode_dataset(
 
 def main():
     # encode_dataset(CLEANED_TEST_DATA_PATH, ENCODED_TEST_DATA_PATH)
-    # Item_Name, cleaned_item_name
     N_SAMPLES = None
-    evaluate_models(CLEANED_TEST_DATA_PATH, "cleaned_item_name", ParaphraserModel, ParaphraserConfig, N_SAMPLES)
+    # Item_Name, cleaned_item_name
+    evaluate_models(CLEANED_TEST_DATA_PATH, "cleaned_item_name", E5_LARGE_CONFIG_PATH, N_SAMPLES)
 
 
 if __name__ == "__main__":

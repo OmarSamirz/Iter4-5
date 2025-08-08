@@ -1,8 +1,9 @@
 accelerate
-torch
-transformers
+# torch
 numpy
 pandas
 matplotlib
 scikit-learn
 sentence-transformers
+huggingface-hub
+nltk

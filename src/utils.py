@@ -1,41 +1,57 @@
-import torch
-import pandas as pd
-from sklearn.metrics import f1_score
 
 import re
 import json
-from typing import List, Optional
+from typing import List
 
 from models import (
-    BaseEmbeddingModel,
-    BaseEmbeddingConfig,
-    Qwen3EmbeddingConfig,
-    ParaphraserConfig,
     DummyModel,
     DummyModelConfig,
-)
+    SentenceEmbeddingModel, 
+    SentenceEmbeddingConfig,
+)  
 from constants import (
     QWEN3_EMBEDDING_CONFIG_PATH,
     PARAPHRASER_EMBEDDING_CONFIG_PATH,
     DUMMY_MODEL_CONFIG_PATH,
+    BGE_M3_CONFIG_PATH,
+    ALL_STOPWORDS
 )
+
+def remove_strings(text: str, strings: List[str]) -> str:
+    for s in strings:
+        s = str(s)
+        if s in text:
+            text = text.replace(s, "")
+    
+    return text
+
+def remove_numbers(text: str, remove_string: bool = False) -> str:
+    text = text.split()
+    text = [t for t in text if not re.search(r"\d", t)] if remove_string else [re.sub(r"\d+", "", t) for t in text]
+
+    return " ".join(text)
+
+def remove_stopwords(text: str):
+    text = text.split()
+    text = [t for t in text if t not in ALL_STOPWORDS or t == "can"]
+
+    return " ".join(text)
+
+def remove_punctuations(text: str) -> str:
+    return re.sub(r'[^\w\s]', '', text)
 
 def clean_text(row) -> str:
     text = row.Item_Name
-    pack = str(row.Pack)
+    brand = row.Brand
     unit = str(row.Unit)
-    weight = str(row.Weight)
-    if pack in text:
-        text = text.replace(pack, "")
-    if unit in text:
-        text = text.replace(unit, "")
-    if weight in text:
-        text = text.replace(weight, "")
-    text = re.sub(r'[^\w\s]', '', text)
-    text = text.split()
-    text = [t for t in text if not re.search(r"\d", t)]
+    text = remove_strings(text, [brand])
+    text = remove_punctuations(text)
+    text = remove_numbers(text)
+    text = remove_stopwords(text)
+    if unit not in text and text == "":
+        text += unit
 
-    return " ".join(text)
+    return  text
 
 def load_dummy_model():
     with open(DUMMY_MODEL_CONFIG_PATH, "r") as f:
@@ -50,67 +66,15 @@ def load_dummy_model():
 
     return model
 
-def load_embedding_model(model_class: BaseEmbeddingModel, config_class: BaseEmbeddingConfig):
-    if issubclass(config_class, Qwen3EmbeddingConfig):
-        with open(QWEN3_EMBEDDING_CONFIG_PATH, "r") as f:
-            config_dict = json.load(f)
-    elif issubclass(config_class, ParaphraserConfig):
-        with open(PARAPHRASER_EMBEDDING_CONFIG_PATH, "r") as f:
-            config_dict = json.load(f)
-    else:
-        raise ValueError(f"This config class is not supported.")
-    
-    try:
-        config = config_class(**config_dict)
-    except TypeError as e:
-        raise ValueError(f"Invalid configuration keys in {config_class}: {e}.")
+def load_embedding_model(config_path: str):
+    with open(config_path, "r") as f:
 
-    model = model_class(config)
+        config_dict = json.load(f)
+    try:
+        config = SentenceEmbeddingConfig(**config_dict)
+    except TypeError as e:
+        raise ValueError(f"Invalid configuration keys: {e}.")
+
+    model = SentenceEmbeddingModel(config)
 
     return model
-
-def evaluate_model(y_true: List[str], y_pred: List[str], average: str) -> float:
-    return f1_score(y_true, y_pred, average=average)
-
-def evaluate_qwen3_embedding(
-        df: pd.DataFrame, 
-        column_name: str,
-        model_class: BaseEmbeddingModel,
-        config_class: BaseEmbeddingConfig,
-        n_samples: Optional[int] = None,
-    ):
-    model = load_embedding_model(model_class, config_class)
-
-    num_samples = n_samples if n_samples is not None else len(df)
-    product_names = df[column_name].tolist()[:num_samples]
-    classes = list(set(df["class"].tolist()))
-
-    scores = []
-    classes_idx = []
-    for product_name in product_names:
-        score = model.get_scores([product_name], classes)
-        class_idx = torch.argmax(score, dim=1)
-        scores.append(score)
-        classes_idx.append(class_idx)
-
-    y_pred = [classes[idx] for idx in classes_idx]
-    y_true =  df["class"].tolist()[:num_samples]
-
-    model_score = evaluate_model(y_true, y_pred, "weighted")
-
-    return model_score
-
-def evaluate_dummy_model(df: pd.DataFrame, column_name: str, n_samples: Optional[int] = None):
-    model = load_dummy_model()
-
-    num_samples = n_samples if n_samples is not None else len(df)
-    product_names = df[column_name].tolist()[:num_samples]
-    labels = df["class"].tolist()[:num_samples]
-
-    model.fit_model(product_names, labels)
-    y_pred = model.predict(product_names)
-    y_true =  df["class"].tolist()[:num_samples]
-
-    model_score = evaluate_model(y_true, y_pred, "weighted")
-
-    return model_score

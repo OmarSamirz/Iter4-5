@@ -1,0 +1,16 @@
+Scores using multilingual-e5-large-instruct:
+    - The score of using Item_Name: 0.35644945667537337
+    - The score of using removed_punctuations: 0.3599045965825389
+    - The score of using removed_numbers: 0.35883535420814744
+    - The score of using removed_numbers_and_punctuations: 0.3578466283586865
+    - The score of using removed_brand: 0.37891450311535513
+    - The score of using removed_pack: 0.35552117250995663
+    - The score of using removed_unit: 0.3336845330452243
+    - The score of using removed_stopwords: 0.3591673939060075
+    - The score of using cleaned_text: 0.3980726997889979
+
+Scores using paraphrase-multilingual-mpnet-base-v2:
+    - The score of using cleaned_text: 0.3265305324526368
+
+Scores using multilingual-e5-large:
+    - The score of using cleaned_text: 0.315206649787535
