@@ -1,10 +1,12 @@
 
+import numpy as np
 from torch import Tensor
 from sklearn.pipeline import Pipeline
 from sklearn.dummy import DummyClassifier
 from sklearn.feature_extraction.text import TfidfVectorizer
 from sklearn.linear_model import LogisticRegression
 from sklearn.ensemble import RandomForestClassifier
+from sklearn.metrics.pairwise import cosine_similarity
 from sentence_transformers import SentenceTransformer
 
 from typing import List, Optional
@@ -65,25 +67,63 @@ class TfidfClassifierConfig:
     norm: str = "l2"
     strip_accents: Optional[str] = None
     stop_words: Optional[set] = None
-    random_state: int = 42
+
+
+class Tfidf:
+
+    def __init__(self, config: Optional[TfidfClassifierConfig]):
+        self.vectorizer = TfidfVectorizer(
+            analyzer=config.analyzer,
+            ngram_range=config.ngram_range,
+            min_df=config.min_df,
+            max_df=config.max_df,
+            lowercase=config.lowercase,
+            sublinear_tf=config.sublinear_tf,
+            smooth_idf=config.smooth_idf,
+            norm=config.norm,
+            strip_accents=config.strip_accents,
+            stop_words=config.stop_words,
+            token_pattern=None if config.analyzer in ("char", "char_wb") else r'(?u)\b\w+\b',
+        )
+
+        self.product_vectors = None
+        self.class_vectors = None
+        self.class_names = None
+
+    def fit(self, product_names, classes):
+        corpus = product_names + classes
+
+        tfidf_matrix = self.vectorizer.fit_transform(corpus)
+
+        self.class_names = classes
+        self.product_vectors = tfidf_matrix[:len(product_names)]
+        self.class_vectors = tfidf_matrix[len(product_names):]
+
+    def predict(self, product_name):
+        vector = self.vectorizer.transform(product_name)
+        scores = cosine_similarity(vector, self.class_vectors)
+        class_idx = np.argmax(scores, axis=1)
+        class_name = [self.class_names[idx] for idx in class_idx]
+
+        return class_name
+
 
 
 class TfidfClassifier:
 
     def __init__(self, config: Optional[TfidfClassifierConfig]):
-        self.config = config
         self.vectorizer = TfidfVectorizer(
-            analyzer=self.config.analyzer,
-            ngram_range=self.config.ngram_range,
-            min_df=self.config.min_df,
-            max_df=self.config.max_df,
-            lowercase=self.config.lowercase,
-            sublinear_tf=self.config.sublinear_tf,
-            smooth_idf=self.config.smooth_idf,
-            norm=self.config.norm,
-            strip_accents=self.config.strip_accents,
-            stop_words=self.config.stop_words,
-            token_pattern=None if self.config.analyzer in ("char", "char_wb") else r'(?u)\b\w+\b',
+            analyzer=config.analyzer,
+            ngram_range=config.ngram_range,
+            min_df=config.min_df,
+            max_df=config.max_df,
+            lowercase=config.lowercase,
+            sublinear_tf=config.sublinear_tf,
+            smooth_idf=config.smooth_idf,
+            norm=config.norm,
+            strip_accents=config.strip_accents,
+            stop_words=config.stop_words,
+            token_pattern=None if config.analyzer in ("char", "char_wb") else r'(?u)\b\w+\b',
         )
 
         self.clf = None

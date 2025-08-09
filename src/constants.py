@@ -61,4 +61,16 @@ CLASSES_TRANSLATION = {
     "vegetables fruits": "الخضروات والفواكه",
     "vegetables herbs": "الخضروات والأعشاب",
     "water": "المياه",
+    "laundry detergents": "الغسيل والمنظفات",
+    "sugar home baking": "السكر والمخبوزات المنزلية",
+    "perfumes deodorants": "العطور ومزيلات العرق",
+    "stationary": "اللوازم المكتبية",
+    "breakfast cereals bars": "ألواح حبوب الإفطار",
+    "dental care": "العناية بالأسنان",
+    "fish": "الأسماك",
+    "footwear": "الأحذية",
+    "mobile tablets": "الأجهزة اللوحية",
+    "party supplies and gifts": "مستلزمات الحفلات والهدايا",
+    "pets care": "العناية بالحيوانات الأليفة",
+    "wear": "الملابس"
 }

@@ -10,6 +10,7 @@ from models import (
     TfidfClassifierConfig,
     SentenceEmbeddingModel, 
     SentenceEmbeddingConfig,
+    Tfidf,
 )
 from constants import DUMMY_MODEL_CONFIG_PATH, ALL_STOPWORDS
 
@@ -54,6 +55,12 @@ def clean_text(row) -> str:
 def load_tfidf_model():
     config = TfidfClassifierConfig()
     model = TfidfClassifier(config)
+
+    return model
+
+def load_tfidf():
+    config = TfidfClassifierConfig()
+    model = Tfidf(config)
 
     return model
 
