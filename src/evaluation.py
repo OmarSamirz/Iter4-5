@@ -1,5 +1,6 @@
 import torch
 import pandas as pd
+from tqdm.auto import tqdm
 from sklearn.metrics import f1_score
 
 import time
@@ -43,7 +44,8 @@ def evaluate_embedding_model(
     scores = []
     classes_idx = []
     runtime = []
-    for product_name in product_names:
+    y_true_all = df["class"].tolist()[:num_samples]
+    for i, product_name in enumerate(tqdm(product_names), start=1):
         start = time.time()
         score = model.get_scores([product_name], classes)
         end = time.time()
@@ -51,6 +53,12 @@ def evaluate_embedding_model(
         class_idx = torch.argmax(score, dim=1)
         scores.append(score)
         classes_idx.append(class_idx)
+
+        if i % 100 == 0:
+            y_pred_temp = [classes[idx] for idx in classes_idx]
+            y_true_temp = y_true_all[:i]
+            temp_score = evaluation_score(y_true_temp, y_pred_temp, "weighted")
+            print(f"Step {i}: Intermediate score = {temp_score:.4f}")
 
     print(f"Average time taken for a single example: {statistics.mean(runtime)} seconds\nNumber of examples: {len(runtime)}")
     y_pred = [classes[idx] for idx in classes_idx]
