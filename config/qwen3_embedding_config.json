@@ -1,0 +1,8 @@
+{
+    "device": "cuda",
+    "dtype": "float32",
+    "convert_to_numpy": false,
+    "convert_to_tensor": true,
+    "model_id": "hyunseop/qwen3-emb-8b-bnb-int8",
+    "truncate_dim": null
+}
