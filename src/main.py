@@ -1,7 +1,10 @@
 import pandas as pd
+import matplotlib.pyplot as plt
+
+import time
 
 from utils import load_embedding_model
-from evaluation import evaluate_dummy_model, evaluate_embedding_model, evaluate_tfidf, evaluate_tfidf_model
+from evaluation import evaluate_dummy_model, evaluate_embedding_topk_model, evaluate_tfidf, evaluate_tfidf_model, evaluate_embedding_model
 from constants import (
     CLEANED_TEST_DATA_PATH,
     ENCODED_TEST_DATA_PATH,
@@ -70,4 +73,8 @@ def main():
 
 
 if __name__ == "__main__":
+    start = time.perf_counter()
     main()
+    end = time.perf_counter()
+    print(f"Runtime: {end - start:.4f}")
+   

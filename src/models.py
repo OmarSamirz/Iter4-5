@@ -132,7 +132,7 @@ class TfidfClassifier:
         self.clf = Pipeline(
             [
                 ("vectorizer_tfidf", self.vectorizer),
-                ("logistic_regression", RandomForestClassifier())
+                ("random_forest", RandomForestClassifier())
             ]
         )
         self.clf.fit(X_train, y_train)
