@@ -10,7 +10,8 @@ from evaluation import (
     evaluate_tfidf, 
     evaluate_tfidf_model, 
     evaluate_embedding_model,
-    evaluate_random_forest_embedding_model
+    evaluate_random_forest_embedding_model,
+    evaluate_qwen_llm
 )
 from constants import (
     CLEANED_TEST_DATA_PATH,
@@ -78,7 +79,20 @@ def main():
     score, _ = evaluate_random_forest_embedding_model(CLEANED_TRAIN_DATA_PATH, CLEANED_TEST_DATA_PATH)
     # score = evaluate_tfidf(CLEANED_TRAIN_DATA_PATH, CLEANED_TEST_DATA_PATH)
     print(f"F1 score for tfidf: {score}")
+    
+    try:
+        df_test = pd.read_csv(CLEANED_TEST_DATA_PATH)
 
+        qwen_score = evaluate_qwen_llm(
+            df_test,
+            config_path="config/qwen_config.json",
+            column_name="cleaned_text",
+            log_csv_path="qwen_predictions_log.csv",
+            print_every=50,
+        )
+        print(f"F1 score for Qwen3-8B-bnb-4bit: {qwen_score:.4f}")
+    except Exception as e:
+        print(f"Qwen evaluation skipped due to error: {e}")
 
 if __name__ == "__main__":
     main()

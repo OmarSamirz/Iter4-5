@@ -163,3 +163,63 @@ def evaluate_embedding_topk_model(
 
     model_score = evaluate_model_topk(y_true, topk_preds, "weighted", k)
     return model_score
+
+
+def evaluate_qwen_llm(
+    df: pd.DataFrame,
+    config_path: str = "config/qwen_config.json",
+    column_name: str = "cleaned_text",
+    n_samples: Optional[int] = None,
+    print_every: int = 50,
+    log_csv_path: str = "qwen_predictions_log.csv",
+) -> float:
+    from utils import load_qwen_model
+    
+    num = n_samples if n_samples is not None else len(df)
+    texts = df[column_name].astype(str).tolist()[:num]
+    y_true = df["class"].astype(str).tolist()[:num]
+    cats = sorted(set(df["class"].astype(str).tolist()))
+
+    print(f"[Qwen] config={config_path} N={num}")
+    clf = load_qwen_model(config_path)
+
+    rows, y_pred, times = [], [], []
+    t_all0 = time.time()
+    for i, text in enumerate(texts, 1):
+        t0 = time.time()
+        pred, raw = clf.predict_one(text, cats, return_raw=True)
+        t1 = time.time()
+        dt = t1 - t0
+        y_pred.append(pred)
+        times.append(dt)
+        avg = sum(times) / len(times)
+
+        print(f"[Qwen] {i}/{num} t={dt:.3f}s avg={avg:.3f}s")
+
+        if i % print_every == 0:
+            run_f1 = evaluation_score(y_true[:i], y_pred, "weighted")
+            print(f"[Qwen] running F1@{i} = {run_f1:.4f}")
+
+        rows.append({
+            "idx": i,
+            "text": text,
+            "true": y_true[i-1],
+            "parsed": pred,
+            "raw": raw,
+            "latency_s": dt,
+        })
+
+    t_all = time.time() - t_all0
+    avg_all = (sum(times) / len(times)) if times else 0.0
+    final_f1 = evaluation_score(y_true, y_pred, "weighted")
+
+    print(f"[Qwen] FINAL F1 = {final_f1:.4f}")
+    print(f"[Qwen] avg_time_per_example = {avg_all:.3f}s | total_time = {t_all:.3f}s | N = {num}")
+
+    try:
+        pd.DataFrame(rows).to_csv(log_csv_path, index=False, encoding="utf-8-sig")
+        print(f"[Qwen] wrote detailed log to {log_csv_path}")
+    except Exception as e:
+        print(f"[Qwen] failed to save log to CSV: {e}")
+
+    return final_f1

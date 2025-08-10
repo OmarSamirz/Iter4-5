@@ -103,3 +103,14 @@ def load_embedding_model(config_path: str):
     model = SentenceEmbeddingModel(config)
 
     return model
+
+
+def load_qwen_model(config_path: str, prompt_file: str = "prompt.txt"):
+    import json
+    from models import QwenLLMClassifier, QwenConfig
+    
+    with open(config_path, 'r') as f:
+        config_dict = json.load(f)
+    
+    config = QwenConfig(**config_dict)
+    return QwenLLMClassifier(config, prompt_file)

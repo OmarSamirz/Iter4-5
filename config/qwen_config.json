@@ -1,0 +1,9 @@
+
+{
+    "model_id": "unsloth/Qwen3-8B-bnb-4bit",
+    "enable_thinking": false,
+    "max_new_tokens": 64,
+    "do_sample": false,
+    "temperature": 0.0,
+    "device_map": "cuda"
+}
