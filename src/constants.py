@@ -11,6 +11,8 @@ CONFIGS_PATH = Path("config")
 
 E5_LARGE_INSTRUCT_CONFIG_PATH = CONFIGS_PATH / "e5_large_instruct_config.json"
 
+RANDOM_FOREST_EMBEDDING_CONFIG = CONFIGS_PATH / "random_forest_embedding_config.json"
+
 DUMMY_MODEL_CONFIG_PATH = CONFIGS_PATH / "dummy_model_config.json"
 
 DATA_PATH = Path("data")

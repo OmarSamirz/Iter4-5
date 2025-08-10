@@ -19,12 +19,14 @@ class SentenceEmbeddingConfig:
     dtype: str
     model_id: str
     truncate_dim: int
-
+    convert_to_numpy: bool
+    convert_to_tensor: bool
 
 class SentenceEmbeddingModel:
 
     def __init__(self, config: SentenceEmbeddingConfig):
         super().__init__()
+        self.config = config
         self.model_id = config.model_id
         self.device = config.device
         self.dtype = config.dtype
@@ -38,7 +40,12 @@ class SentenceEmbeddingModel:
         )
 
     def get_embeddings(self, texts: List[str], prompt_name: Optional[str] = None) -> Tensor:
-        embeddings = self.model.encode(texts, prompt_name=prompt_name, convert_to_numpy=False, convert_to_tensor=True)
+        embeddings = self.model.encode(
+            texts, 
+            prompt_name=prompt_name, 
+            convert_to_numpy=self.config.convert_to_numpy,
+            convert_to_tensor=self.config.convert_to_tensor
+        )
 
         return embeddings
 
@@ -108,7 +115,6 @@ class Tfidf:
         return class_name
 
 
-
 class TfidfClassifier:
 
     def __init__(self, config: Optional[TfidfClassifierConfig]):
@@ -139,6 +145,23 @@ class TfidfClassifier:
 
     def predict(self, x):
         return self.clf.predict(x)
+
+
+class RandomForestEmbeddingModel:
+
+    def __init__(self, config: SentenceEmbeddingConfig) -> None:
+        self.random_forest = RandomForestClassifier()
+        self.embedding_model = SentenceEmbeddingModel(config)
+
+    def fit(self, X_train, y_train):
+        embeddings = self.embedding_model.get_embeddings(X_train, "query").tolist()
+        self.random_forest.fit(embeddings, y_train)
+
+    def predict(self, x):
+        embeddings = self.embedding_model.get_embeddings(x).tolist()
+        pred = self.random_forest.predict(embeddings)
+
+        return pred
 
 
 @dataclass

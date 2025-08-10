@@ -4,7 +4,14 @@ import matplotlib.pyplot as plt
 import time
 
 from utils import load_embedding_model
-from evaluation import evaluate_dummy_model, evaluate_embedding_topk_model, evaluate_tfidf, evaluate_tfidf_model, evaluate_embedding_model
+from evaluation import (
+    evaluate_dummy_model, 
+    evaluate_embedding_topk_model, 
+    evaluate_tfidf, 
+    evaluate_tfidf_model, 
+    evaluate_embedding_model,
+    evaluate_random_forest_embedding_model
+)
 from constants import (
     CLEANED_TEST_DATA_PATH,
     ENCODED_TEST_DATA_PATH,
@@ -68,13 +75,11 @@ def main():
     # Item_Name, cleaned_item_name
     # evaluate_models(CLEANED_TEST_DATA_PATH, "cleaned_item_name", E5_LARGE_CONFIG_PATH, N_SAMPLES)
     # score = evaluate_tfidf_model(CLEANED_TRAIN_DATA_PATH, CLEANED_TEST_DATA_PATH)
-    score = evaluate_tfidf(CLEANED_TRAIN_DATA_PATH, CLEANED_TEST_DATA_PATH)
+    score, _ = evaluate_random_forest_embedding_model(CLEANED_TRAIN_DATA_PATH, CLEANED_TEST_DATA_PATH)
+    # score = evaluate_tfidf(CLEANED_TRAIN_DATA_PATH, CLEANED_TEST_DATA_PATH)
     print(f"F1 score for tfidf: {score}")
 
 
 if __name__ == "__main__":
-    start = time.perf_counter()
     main()
-    end = time.perf_counter()
-    print(f"Runtime: {end - start:.4f}")
    

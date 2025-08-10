@@ -11,8 +11,9 @@ from models import (
     SentenceEmbeddingModel, 
     SentenceEmbeddingConfig,
     Tfidf,
+    RandomForestEmbeddingModel,
 )
-from constants import DUMMY_MODEL_CONFIG_PATH, ALL_STOPWORDS
+from constants import DUMMY_MODEL_CONFIG_PATH, ALL_STOPWORDS, RANDOM_FOREST_EMBEDDING_CONFIG
 
 def remove_strings(text: str, strings: List[str]) -> str:
     for s in strings:
@@ -52,6 +53,19 @@ def clean_text(row) -> str:
 
     return  text
 
+def load_random_forest_embedding_model():
+    with open(RANDOM_FOREST_EMBEDDING_CONFIG, "r") as f:
+        config_dict = json.load(f)
+
+    try:
+        config = SentenceEmbeddingConfig(**config_dict)
+    except TypeError as e:
+        raise ValueError(f"Invalid configuration keys: {e}.")
+    
+    model = RandomForestEmbeddingModel(config)
+
+    return model
+
 def load_tfidf_model():
     config = TfidfClassifierConfig()
     model = TfidfClassifier(config)
@@ -79,8 +93,8 @@ def load_dummy_model():
 
 def load_embedding_model(config_path: str):
     with open(config_path, "r") as f:
-
         config_dict = json.load(f)
+    
     try:
         config = SentenceEmbeddingConfig(**config_dict)
     except TypeError as e:
