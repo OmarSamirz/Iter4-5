@@ -21,7 +21,7 @@ This project focuses on classifying receipt items into distinct categories based
 
 | Approach | F1 Score | Runtime | Notes |
 |----------|----------|---------|-------|
-| **TF-IDF Ensemble (Run 3)** | **0.9290** | Fast | **🏆 BEST PERFORMING - Ensemble method** |
+| **TF-IDF Ensemble (Run 3)** | **0.9290** | Fast | ** BEST PERFORMING - Ensemble method** |
 | TF-IDF Only (Run 1) | 0.2588 | Fast | Traditional TF-IDF without ensemble |
 | TF-IDF Only (Run 2) | 0.2629 | Fast | Traditional TF-IDF without ensemble |
 | Qwen3 Embedding (Top-3) | 0.5187 | 466 sec | Modern embedding approach |
