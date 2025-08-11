@@ -15,6 +15,8 @@ DUMMY_MODEL_CONFIG_PATH = CONFIGS_PATH / "dummy_model_config.json"
 
 DATA_PATH = Path("data")
 
+OUTPUT_PATH = Path("outputs")
+
 TEST_DATA_PATH = DATA_PATH / "test.csv"
 
 CLEANED_TRAIN_DATA_PATH = DATA_PATH / "cleaned_train.csv"
@@ -22,6 +24,8 @@ CLEANED_TRAIN_DATA_PATH = DATA_PATH / "cleaned_train.csv"
 CLEANED_TEST_DATA_PATH = DATA_PATH / "cleaned_test.csv"
 
 ENCODED_TEST_DATA_PATH = DATA_PATH / "encoded_test.csv"
+
+OUTPUT_TEST_DATA_PATH = DATA_PATH / "output.csv"
 
 TRAIN_VAL_DATA_PATH = DATA_PATH / "train_val.csv"
 

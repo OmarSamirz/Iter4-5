@@ -7,7 +7,14 @@ import statistics
 from typing import List, Optional
 
 from models import SentenceEmbeddingModel
-from utils import load_embedding_model, load_dummy_model, load_tfidf, load_tfidf_model
+from utils import (
+    load_embedding_model, 
+    load_dummy_model, 
+    load_tfidf, 
+    load_tfidf_model,
+    load_bagging_ensemble_model,
+    load_boosting_ensemble_model
+)
 
 def evaluation_score(y_true: List[str], y_pred: List[str], average: str) -> float:
     return f1_score(y_true, y_pred, average=average)
@@ -105,7 +112,7 @@ def evaluate_tfidf(train_data_path: str, test_data_path: str):
 
     model_score = evaluation_score(y_test, y_pred, "weighted")
 
-    return model_score
+    return model_score, y_pred
 
 def evaluate_model_topk(y_true: List[str], y_pred_topk: List[List[str]], average: str, k: int) -> float:
     y_pred_adjusted = []
@@ -115,7 +122,7 @@ def evaluate_model_topk(y_true: List[str], y_pred_topk: List[List[str]], average
         else:
             y_pred_adjusted.append(pred_list[0])  
 
-    return f1_score(y_true, y_pred_adjusted, average=average)
+    return f1_score(y_true, y_pred_adjusted, average=average), y_pred_adjusted
 
 def evaluate_embedding_topk_model(
         df: pd.DataFrame, 
@@ -124,9 +131,6 @@ def evaluate_embedding_topk_model(
         n_samples: Optional[int] = None,
         k: int = 3,
     ):
-    """
-    Evaluate an embedding model using Top-k accuracy logic for F1 score.
-    """
     model = load_embedding_model(config_path)
 
     num_samples = n_samples if n_samples is not None else len(df)
@@ -144,5 +148,51 @@ def evaluate_embedding_topk_model(
 
     y_true = df["class"].tolist()[:num_samples]
 
-    model_score = evaluate_model_topk(y_true, topk_preds, "weighted", k)
-    return model_score
+    model_score, y_pred_adjusted = evaluate_model_topk(y_true, topk_preds, "weighted", k)
+    return model_score, y_pred_adjusted
+
+
+def evaluate_bagging_ensemble(train_data_path: str, test_data_path: str, config_path: str):
+    df_train = pd.read_csv(train_data_path)
+    df_test = pd.read_csv(test_data_path)
+    
+    model = load_bagging_ensemble_model(config_path)
+    
+    X_train, y_train = df_train["cleaned_text"].tolist(), df_train["class"].tolist()
+    X_test, y_test = df_test["cleaned_text"].tolist(), df_test["class"].tolist()
+    
+    model.fit(X_train, y_train)
+    
+    y_pred = model.predict(X_test)
+    
+    model_score = evaluation_score(y_test, y_pred, "weighted")
+    
+    return model_score, y_pred
+
+
+def evaluate_boosting_ensemble(train_data_path: str, test_data_path: str, config_path: str, k : int = 3):
+    df_train = pd.read_csv(train_data_path)
+    df_test = pd.read_csv(test_data_path)
+    
+    model = load_boosting_ensemble_model(config_path)
+    
+    X_train, y_train = df_train["cleaned_text"].tolist(), df_train["class"].tolist()
+    X_test, y_test = df_test["cleaned_text"].tolist(), df_test["class"].tolist()
+    
+    model.fit(X_train, y_train)
+    
+    y_pred = model.predict(X_test, y_test, k)
+    
+    model_score = evaluation_score(y_test, y_pred, "weighted")
+    
+    return model_score, y_pred
+
+
+def evaluate_ensemble_models(train_data_path: str, test_data_path: str, config_path: str, k : int = 3):
+
+    
+    bagging_score, bagging_pred = evaluate_bagging_ensemble(train_data_path, test_data_path, config_path)
+
+    boosting_score, boosting_pred = evaluate_boosting_ensemble(train_data_path, test_data_path, config_path, k)
+ 
+    return bagging_score, boosting_score

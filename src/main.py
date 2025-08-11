@@ -1,30 +1,43 @@
 import pandas as pd
 import matplotlib.pyplot as plt
-
+import os 
 import time
 
 from utils import load_embedding_model
-from evaluation import evaluate_dummy_model, evaluate_embedding_topk_model, evaluate_tfidf, evaluate_tfidf_model, evaluate_embedding_model
+
+from evaluation import (
+    evaluate_dummy_model, 
+    evaluate_embedding_topk_model, 
+    evaluate_tfidf, 
+    evaluate_tfidf_model, 
+    evaluate_embedding_model,
+    evaluate_ensemble_models  
+)
+
 from constants import (
     CLEANED_TEST_DATA_PATH,
     ENCODED_TEST_DATA_PATH,
     CLEANED_TRAIN_DATA_PATH,
+    E5_LARGE_INSTRUCT_CONFIG_PATH,
+    OUTPUT_TEST_DATA_PATH,
+    OUTPUT_PATH
 )
 
 def evaluate_models(
     dataset_path: str, 
     column_name: str,
     config_path: str,  
-    n_samples: int
+    n_samples: int,
+    k: int,
 ):
     df = pd.read_csv(dataset_path)
     print(f"Number of samples: {n_samples}")
     print(f"The used column to test the models: {column_name}")
-    embedding_score = evaluate_embedding_model(df, column_name, config_path, n_samples)
+    embedding_score, topk_preds = evaluate_embedding_topk_model(df, column_name, config_path, n_samples, k)
     print(f"The F1 score for the embedding model: {embedding_score}")
-
-    dummy_score = evaluate_dummy_model(df, column_name, n_samples)
-    print(f"The F1 score for the dummy model: {dummy_score}")
+    return topk_preds
+    # dummy_score = evaluate_dummy_model(df, column_name, n_samples)
+    # print(f"The F1 score for the dummy model: {dummy_score}")
 
 def encode_dataset(
     dataset_path: str, 
@@ -62,14 +75,30 @@ def encode_dataset(
 
     df.to_csv(save_path, index=False, encoding="utf-8-sig")
 
+
+
 def main():
-    # encode_dataset(CLEANED_TEST_DATA_PATH, ENCODED_TEST_DATA_PATH)
+    #encode_dataset(CLEANED_TEST_DATA_PATH, E5_LARGE_INSTRUCT_CONFIG_PATH, ENCODED_TEST_DATA_PATH)
     N_SAMPLES = None
     # Item_Name, cleaned_item_name
-    # evaluate_models(CLEANED_TEST_DATA_PATH, "cleaned_item_name", E5_LARGE_CONFIG_PATH, N_SAMPLES)
-    # score = evaluate_tfidf_model(CLEANED_TRAIN_DATA_PATH, CLEANED_TEST_DATA_PATH)
-    score = evaluate_tfidf(CLEANED_TRAIN_DATA_PATH, CLEANED_TEST_DATA_PATH)
-    print(f"F1 score for tfidf: {score}")
+    #pred = evaluate_models(CLEANED_TEST_DATA_PATH, "cleaned_text", E5_LARGE_INSTRUCT_CONFIG_PATH , N_SAMPLES, 5)
+    #score_mk  = evaluate_tfidf_model(CLEANED_TRAIN_DATA_PATH, CLEANED_TEST_DATA_PATH)
+    #score_samir, pred = evaluate_tfidf(CLEANED_TRAIN_DATA_PATH, CLEANED_TEST_DATA_PATH)
+    bagging_results, boosting_results = evaluate_ensemble_models(CLEANED_TRAIN_DATA_PATH,  CLEANED_TEST_DATA_PATH, E5_LARGE_INSTRUCT_CONFIG_PATH)
+   
+    # df = pd.read_csv(CLEANED_TEST_DATA_PATH)
+    # df_output = df[["cleaned_text", "class"]].copy()
+    # df_output["prediction"] = pred
+    # df_output["correct"] = (df_output["prediction"] == df_output["class"]).astype(int)
+    # df_output.to_csv(OUTPUT_TEST_DATA_PATH, index=False, encoding="utf-8-sig")
+    # plot_class_distributions(df_output, OUTPUT_PATH)
+    #save_ensemble_results(df, ensemble_results, OUTPUT_PATH)
+
+
+    #print(f"F1 score random forest + tfidf: {score_mk}")
+    #print(f"F1 score tfidf: {score_samir}")
+    print(f"F1 score Bagging: {bagging_results}, F1 Score Boosting {boosting_results}")
+
 
 
 if __name__ == "__main__":

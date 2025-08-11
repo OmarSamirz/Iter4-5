@@ -1,5 +1,5 @@
 accelerate
-# torch
+torch
 numpy
 pandas
 matplotlib
